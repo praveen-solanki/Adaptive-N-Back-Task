@@ -246,9 +246,6 @@ class IntroWindow(ctk.CTk):
         super().__init__()
         self.title("Welcome")
         self.minsize(800, 600)
-        #ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 3)
-        #hwnd = win32gui.FindWindow(None, "Welcome")
-        #win32gui.ShowWindow(hwnd, win32con.SW_MAXIMIZE)
 
         self.after_id = None
         self.filepath = "users.csv"
@@ -256,9 +253,20 @@ class IntroWindow(ctk.CTk):
         self.label = ctk.CTkLabel(
             self,
             text=(
-                "Welcome to the N-back task!\n\n"
-                "You will see a sequence of shapes. This will show how exactly this will work.\n\n"
-                "We will start with some practice. Press 'Space' to continue."
+                "Welcome to the Adaptive N-Back Task!\n\n"
+                "This task measures your working memory and attention by presenting a sequence of stimuli (shapes)."
+                "Your goal is to determine if the current stimulus matches the one presented N steps earlier.\n\n"
+                "How It Works:\n\n"
+                "• You will see a series of stimuli, each appearing one at a time.\n"
+                "• If the current stimulus matches the one from N steps ago, respond accordingly.\n"
+                "• If it does not match, respond differently.\n"
+                "• The difficulty level (N) will increase or decrease based on your performance.\n\n"
+                "Instructions:\n\n"
+                "• Stay focused and respond as accurately as possible.\n"
+                "• Press 'Same' if the current stimulus matches the one from N steps ago.\n"
+                "• Press 'Different' if it does not match.\n"
+                "• The task adapts dynamically, so keep track of the changing N value.\n\n"
+                "Press [Space] to continue."
             ),
             font=("Arial", 16),
             justify="center",
@@ -277,7 +285,7 @@ class IntroWindow(ctk.CTk):
         if not os.path.exists(self.filepath):
             with open(self.filepath, mode="w", newline="") as file:
                 writer = csv.writer(file)
-                writer.writerow(["Name", "Email", "DoB", "User ID", "N Value"])
+                writer.writerow(["Name", "DoB", "User ID", "N Value"])
 
     def close_window(self):
         self.quit()
@@ -347,13 +355,6 @@ class IntroWindow(ctk.CTk):
         name_entry = ctk.CTkEntry(self.input_frame)
         name_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        # Email Field
-        email_label = ctk.CTkLabel(self.input_frame, text="Email:")
-        email_label.grid(row=1, column=0, padx=5, pady=5)
-
-        email_entry = ctk.CTkEntry(self.input_frame)
-        email_entry.grid(row=1, column=1, padx=5, pady=5)
-
         dob_label = ctk.CTkLabel(self.input_frame, text="Date of Birth (DDMMYYYY):")
         dob_label.grid(row=2, column=0, padx=5, pady=5)
 
@@ -364,7 +365,7 @@ class IntroWindow(ctk.CTk):
         submit_button = ctk.CTkButton(
             self.input_frame,
             text="Enter",
-            command=lambda: self.submit_register(name_entry, email_entry, dob_entry)
+            command=lambda: self.submit_register(name_entry, dob_entry)
         )
         submit_button.grid(row=3, column=0, columnspan=2, pady=10)
 
@@ -399,19 +400,13 @@ class IntroWindow(ctk.CTk):
         else:
             ctk.CTkLabel(self.input_frame, text="User ID not found!", fg_color="red").grid(row=2, column=0, columnspan=2, pady=5)
 
-    def submit_register(self, name_entry, email_entry, dob_entry):
+    def submit_register(self, name_entry, dob_entry):
         name = name_entry.get().strip()
-        email = email_entry.get().strip()
         dob = dob_entry.get().strip()
 
         # Validate Name
         if not name.isalpha():
             ctk.CTkLabel(self.input_frame, text="Invalid Name! Only alphabets allowed.", fg_color="red").grid(row=4, column=0, columnspan=2, pady=5)
-            return
-
-        # Validate Email
-        if not email.endswith("@gmail.com"):
-            ctk.CTkLabel(self.input_frame, text="Invalid Email! Must end with @gmail.com", fg_color="red").grid(row=5, column=0, columnspan=2, pady=5)
             return
 
         # Validate Date of Birth
@@ -427,7 +422,7 @@ class IntroWindow(ctk.CTk):
         with open(self.filepath, mode="r") as file:
             reader = csv.DictReader(file)
             for row in reader:
-                if row["User ID"] == user_id or row["Email"] == email:
+                if row["User ID"] == user_id:
                     user_exists = True
                     break
         if user_exists:
@@ -437,7 +432,7 @@ class IntroWindow(ctk.CTk):
         # Save details to CSV if user doesn't exist
         with open(self.filepath, mode="a", newline="") as file:
             writer = csv.writer(file)
-            writer.writerow([name, email, dob, user_id, 1])
+            writer.writerow([name, dob, user_id, 1])
 
         print(f"Register successful for User ID: {user_id}")
         ctk.CTkLabel(self.input_frame, text="Registration successful!", fg_color="green").grid(row=7, column=0, columnspan=2, pady=5)
@@ -572,7 +567,7 @@ class MainApp(ctk.CTk):
     def generate_random_shape(self):
         """Generate a random shape and color."""
         shape_type = random.choice([
-            "circle", "square", "triangle", "star", "pentagon", "rectangle", "line"
+            "circle", "square", "triangle", "star", "pentagon", "rectangle","arc"
         #shape_type = random.choice([
         #    "circle", "square", "triangle", "arc", "star", "pentagon", "ellipse", "rectangle", "hexagon", "line"
         ])
@@ -679,11 +674,6 @@ class MainApp(ctk.CTk):
             self.canvas.create_oval(x1 + size * 0.2, y1, x2 - size * 0.2, y2, fill=color, outline="")
         elif shape_type == "rectangle":
             self.canvas.create_rectangle(x1 + size * 0.2, y1, x2 - size * 0.2, y2, fill=color, outline="")
-        elif shape_type == "hexagon":
-            points = self.calculate_polygon_points(cx, cy, size, 6, angle)
-            self.canvas.create_polygon(points, fill=color, outline="")
-        elif shape_type == "line":
-            self.canvas.create_line(x1, y1, x2, y2, fill=color, width=5)
 
     def calculate_polygon_points(self, cx, cy, size, num_sides, angle):
         """Calculate the vertices of a regular polygon."""
@@ -719,6 +709,22 @@ class MainApp(ctk.CTk):
         self.previous_shape = shape_data
         
         #self.shape_list.append(self.previous_shape)
+
+    #def display_random_shape(self):
+    #    self.start_time = time.time()
+    #    # Determine if we should repeat the N-back shape (30% probability)
+    #    if len(self.shape_history) >= self.n_back and random.random() < 0.3:
+    #        shape_type = self.shape_history[-self.n_back]  # Repeat N-back shape
+    #    else:
+    #        shape_type = self.generate_random_shape()  # Generate new shape
+
+    #    # Store the new shape in history
+    #    self.shape_history.append(shape_type)
+    #    if len(self.shape_history) > self.n_back:
+    #        self.shape_history.pop(0)  # Maintain history size
+
+    #    shape_data = (shape_type, None)
+    #    self.display_shape(shape_data, animate=True, rotate=False)
 
     def display_random_shape(self):
         self.start_time = time.time() 
@@ -948,7 +954,7 @@ class P(MainApp):
             cx, cy = self.canvas.winfo_width() / 2, self.canvas.winfo_height() / 2
             size = 150
             angle = 0
-            color = "#FF5733"
+            color = "#A6ACAF"
             x1, y1 = cx - size, cy - size
             x2, y2 = cx + size, cy + size
 
@@ -986,15 +992,8 @@ class P(MainApp):
             elif shape_type == "pentagon":
                 points = self.calculate_polygon_points(cx, cy, size, 5, angle)
                 self.canvas.create_polygon(points, fill=color, outline="")
-            elif shape_type == "ellipse":
-                self.canvas.create_oval(x1 + size * 0.2, y1, x2 - size * 0.2, y2, fill=color, outline="")
             elif shape_type == "rectangle":
                 self.canvas.create_rectangle(x1 + size * 0.2, y1, x2 - size * 0.2, y2, fill=color, outline="")
-            elif shape_type == "hexagon":
-                points = self.calculate_polygon_points(cx, cy, size, 6, angle)
-                self.canvas.create_polygon(points, fill=color, outline="")
-            elif shape_type == "line":
-                self.canvas.create_line(x1, y1, x2, y2, fill=color, width=5)
 
             print(f"Shape {self.shape_count} displayed.")
             # Optionally, add labels or other visuals
